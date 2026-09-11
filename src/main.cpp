@@ -1433,7 +1433,7 @@ static void composeVaultPage(eui::Ui& ui, const AppTheme& t, float w) {
                                             spacer(ui, rowId + ".sp");
                                             btn(ui, t, rowId + ".tpl", 162.0f, 30.0f,
                                                 copyLabel("copy.vaulttpl." + name,
-                                                          "复制金库说明模板", "已复制"),
+                                                          "复制给 Agent", "已复制"),
                                                 BtnKind::Ghost, false, [name] {
                                                     copyWithFeedback(
                                                         "copy.vaulttpl." + name,
