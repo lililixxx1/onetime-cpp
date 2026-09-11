@@ -5,14 +5,14 @@
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey)
 ![Tests](https://img.shields.io/badge/tests-154%20passed-brightgreen)
 
-一次性密钥递送的原生 C++ 桌面应用：票据式 GUI（[EUI-NEO](https://github.com/sudoevolve/EUI-NEO)）+ 内置本机 HTTP 服务 + AES-256-GCM 加密金库。不引入第三方密码库（Windows 走系统 CNG，Linux 自带实现）；Windows Release 为静态 CRT 单文件 exe，目标机零依赖。
+一次性密钥递送的原生 C++ 桌面应用：票据式 GUI（[EUI-NEO](https://github.com/sudoevolve/EUI-NEO)）+ 内置本机 HTTP 服务，一次性链接载荷 AES-256-GCM 加密（解密钥匙只在链接里）。不引入第三方密码库（Windows 走系统 CNG，Linux 自带实现）；Windows Release 为静态 CRT 单文件 exe，目标机零依赖。
 
 > **链接即凭证**：取走一次即烧毁，请勿打开测试。只经无预览的通道递送（直接贴进终端 / agent 会话）；Discord、Slack 等会预取链接的 IM 会在预览时就取走明文并烧毁链接。
 
 ## 特性
 
 - **一次性链接**：明文只存进程内存，`GET /s/<id>.<key>` 取走即焚；TTL 30 秒 ~ 168 小时（默认 1h），支持作废（作废令牌仅存当前窗口内存）。
-- **本机金库**：常用密钥 AES-256-GCM 加密落盘（`~/.onetime/secrets`），条目名可记忆、内容加密，一键出票。
+- **本机金库**：常用密钥落盘本机（`~/.onetime/secrets`，一钥一文件，**明文存储**，依赖文件系统权限保护），条目名可记忆，一键出票。
 - **设置中心**：监听地址、公网基址、默认 TTL、金库目录、主题、托盘、开机自启等，保存即时生效（个别项重启生效）。
 - **零泄漏日志**：只记事件与字节数，不落路径、链接、ID、密钥与内容。
 - **单文件分发**：MSVC 静态 CRT（/MT）+ LTCG，一个 exe 即整个应用。
@@ -26,7 +26,7 @@
 | 页签 | 内容 |
 | --- | --- |
 | 一次性链接 | 粘贴密钥 → 选 TTL → 生成；票据含编号 / 过期时间 / 链接，支持「复制给 Agent」（按模板替换）、仅复制链接、作废 |
-| 本机金库 | 加密条目列表，取用 / 追加 / 删除；条目名明文便于查找，内容加密存储 |
+| 本机金库 | 条目列表，取用 / 追加 / 删除；条目名与内容均明文落盘，靠文件系统权限保护 |
 | 设置 | 服务参数与外观行为，`~/.onetime/settings.txt` 落盘 |
 
 ## HTTP API
@@ -89,8 +89,8 @@ build\Release\onetime_tests.exe      # 测试（154 项安全不变量）
 ## 安全模型
 
 - **票据仅内存**：明文密钥只存在于进程内存，取走 / 过期 / 重启即消失；作废令牌同样只在本窗口生命周期内有效。
-- **金库加密落盘**：AES-256-GCM（12 字节 nonce + 16 字节 tag），密文布局 nonce ‖ 密文 ‖ tag；Windows 与 Linux 构建由共享测试向量锁定逐字节一致，金库文件跨平台通用。
-- **OS 原语密码学**：Windows 走 CNG（`BCryptGenRandom` 系统熵源、SHA-256、AES-GCM），POSIX 侧等价实现；不引入第三方密码库。
+- **金库明文落盘**：`~/.onetime/secrets` 一键一文件，内容明文不加密，仅靠文件系统权限限制本机读取；不要在不受信任的本机环境存放高价值密钥。
+- **OS 原语密码学**：Windows 走 CNG（`BCryptGenRandom` 系统熵源、SHA-256、AES-GCM），POSIX 侧等价实现，由共享测试向量锁定逐字节一致；一次性链接载荷密文布局 nonce（12B）‖ 密文 ‖ tag（16B），不引入第三方密码库。
 - **CSRF 防护**：`Sec-Fetch-Site` / `Origin` 校验，浏览器跨站请求拒绝，防恶意页面借本机服务出票。
 - **日志零泄漏**：事件与字节数之外不落任何敏感字段。
 
