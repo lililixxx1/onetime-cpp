@@ -49,10 +49,10 @@ jobs:
       - name: 安装构建依赖
         run: |
           sudo apt-get update
-          # libwayland-dev/bin：bundled GLFW 在 Linux 上默认启用 Wayland 后端，
-          # 编译期需要 wayland-scanner 与 wayland 客户端开发库
+          # libwayland-dev/bin、libxkbcommon-dev：bundled GLFW 在 Linux 上默认启用 Wayland 后端，
+          # 编译期需要 wayland-scanner、wayland 客户端开发库与 xkbcommon
           sudo apt-get install -y build-essential cmake xorg-dev libgl1-mesa-dev libglu1-mesa-dev \
-            libwayland-dev libwayland-bin
+            libwayland-dev libwayland-bin libxkbcommon-dev
       - name: 获取 EUI-NEO（bundled 模式，其余依赖全离线）
         run: |
           git clone https://github.com/sudoevolve/EUI-NEO.git 3rd/EUI-NEO

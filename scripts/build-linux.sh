@@ -25,6 +25,7 @@ pkg_installed() {  # 粗探测：头文件/库文件存在即认为可用
         libglu1-mesa-dev) ls /usr/include/GL/glu.h >/dev/null 2>&1 || ls /usr/lib/*/libGLU.so* >/dev/null 2>&1;;
         libwayland-dev) ls /usr/include/wayland-client.h >/dev/null 2>&1;;
         libwayland-bin) command -v wayland-scanner >/dev/null 2>&1;;
+        libxkbcommon-dev) pkg-config --exists xkbcommon 2>/dev/null;;
         pkg-config) command -v pkg-config >/dev/null 2>&1;;
         libglib2.0-dev) pkg-config --exists gio-2.0 2>/dev/null;;
         *) false;;
@@ -32,7 +33,7 @@ pkg_installed() {  # 粗探测：头文件/库文件存在即认为可用
 }
 # bundled GLFW 在 Linux 上默认启用 Wayland 后端，编译期需要 wayland 开发库 + wayland-scanner；
 # 用户显式传 -DGLFW_BUILD_WAYLAND*（如 OFF 只要 X11）时由其自管依赖，不再检查
-wayland_pkgs="libwayland-dev libwayland-bin"
+wayland_pkgs="libwayland-dev libwayland-bin libxkbcommon-dev"
 for a in "$@"; do
     case "$a" in -DGLFW_BUILD_WAYLAND*) wayland_pkgs="";; esac
 done

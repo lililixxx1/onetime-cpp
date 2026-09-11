@@ -6,7 +6,7 @@
 
 ```bash
 sudo apt install build-essential cmake xorg-dev libgl1-mesa-dev libglu1-mesa-dev \
-  libwayland-dev libwayland-bin
+  libwayland-dev libwayland-bin libxkbcommon-dev
 ./scripts/build-linux.sh
 ```
 
