@@ -3,7 +3,7 @@
 ![License](https://img.shields.io/badge/License-GPL--3.0-blue)
 ![C++](https://img.shields.io/badge/C%2B%2B-17-00599C)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey)
-![Tests](https://img.shields.io/badge/tests-140%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-154%20passed-brightgreen)
 
 一次性密钥递送的原生 C++ 桌面应用：票据式 GUI（[EUI-NEO](https://github.com/sudoevolve/EUI-NEO)）+ 内置本机 HTTP 服务 + AES-256-GCM 加密金库。不引入第三方密码库（Windows 走系统 CNG，Linux 自带实现）；Windows Release 为静态 CRT 单文件 exe，目标机零依赖。
 
@@ -70,7 +70,7 @@ build.bat
 cmake -S . -B build
 cmake --build build --config Release
 build\Release\onetime.exe            # 应用
-build\Release\onetime_tests.exe      # 测试（140 项安全不变量）
+build\Release\onetime_tests.exe      # 测试（154 项安全不变量）
 ```
 
 **Linux**：见 [docs/linux-build.md](docs/linux-build.md)（托盘依赖 glib/gio 或 GTK，缺失时以 `-DEUI_ENABLE_TRAY=OFF` 关闭）。
