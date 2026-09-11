@@ -746,8 +746,57 @@ std::string writeIconTempFile() {
     return f.good() ? p.string() : std::string{};
 }
 
+#ifndef _WIN32
+// Linux 桌面集成：GNOME/KDE 的 dock/Alt-Tab 不读 _NET_WM_ICON，而是按 WM_CLASS
+// 关联 .desktop 入口取图标。GLFW 未显式设置时 WM_CLASS 回退成窗口标题（含中文
+// 与空格，无法匹配任何入口）；RESOURCE_NAME 环境变量可定 res_name（res_class
+// 仍为标题，GNOME 两者任一命中即关联）。.desktop/图标自装到用户目录（单二进制
+// 无包管理器，同 Chrome/VSCode 模式）。Wayland 的 app_id 只认 GLFW hint（EUI
+// 未暴露），纯 Wayland 会话下 dock 图标仍为通用占位，属框架限制。
+static void installDesktopEntry() {
+    namespace fs = std::filesystem;
+    std::error_code ec;
+    const std::string home = plat::homeDirUtf8();
+    if (home.empty()) return;
+    const fs::path iconsDir = fs::u8path(home) / ".local/share/icons";
+    fs::create_directories(iconsDir, ec);
+    std::ofstream icon(iconsDir / "onetime.png", std::ios::binary | std::ios::trunc);
+    if (!icon) return;
+    icon.write(reinterpret_cast<const char*>(kIconPng),
+               static_cast<std::streamsize>(kIconPngSize));
+    icon.close();
+
+    const std::string exe = plat::exePathUtf8();
+    if (exe.empty()) return;
+    std::string esc; // Exec 保留字转义（与自启动条目同规则）
+    for (char c : exe) {
+        if (c == '\\' || c == '"' || c == '`' || c == '$') esc += '\\';
+        esc += c;
+    }
+    const fs::path appsDir = fs::u8path(home) / ".local/share/applications";
+    fs::create_directories(appsDir, ec);
+    std::ofstream out(appsDir / "onetime.desktop", std::ios::binary | std::ios::trunc);
+    if (!out) return;
+    out << "[Desktop Entry]\n"
+        << "Type=Application\n"
+        << "Name=onetime\n"
+        << "Comment=一次性密钥递送\n"
+        << "Exec=\"" << esc << "\"\n"
+        << "Icon=onetime\n"
+        << "Terminal=false\n"
+        << "Categories=Utility;Security;\n"
+        << "StartupWMClass=onetime\n";
+}
+#endif
+
 const DslAppConfig& dslAppConfig() {
     static const DslAppConfig config = [] {
+#ifndef _WIN32
+        // 必须先于窗口创建（GLFW 创建窗口时读取）：res_name=onetime 供 dock/
+        // Alt-Tab 关联 .desktop；再自装 .desktop 与图标（幂等，见函数注释）
+        setenv("RESOURCE_NAME", "onetime", 0);
+        installDesktopEntry();
+#endif
         parseCli();
         // settings 合并必须先于页眉/页脚拼接与服务线程启动：默认 → settings → 命令行显式键
         loadSettingsFile(settingsPath(), g_settings);
