@@ -1,0 +1,90 @@
+name: release
+
+# 推 v* tag → 双平台构建 + 测试 + 自动创建 Release 并挂产物
+# workflow_dispatch 手动触发 → 只跑构建验证，不发布
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch: {}
+
+env:
+  # EUI-NEO 钉在上游 main 的具体 commit（2026-09-04，与本仓库开发时本地使用的版本一致）。
+  # 升级时改这里；钉 commit 保证云端构建可复现。
+  EUI_NEO_REF: bd921564de36a96f76d6ad05ebf9f477e4e1496e
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 获取 EUI-NEO（bundled 模式，其余依赖全离线）
+        shell: bash
+        run: |
+          git clone https://github.com/sudoevolve/EUI-NEO.git 3rd/EUI-NEO
+          git -C 3rd/EUI-NEO checkout "$EUI_NEO_REF"
+      - name: 配置 + 构建（Release）
+        run: |
+          cmake -S . -B build
+          cmake --build build --config Release
+      - name: 测试（安全不变量全量）
+        shell: bash
+        run: ./build/Release/onetime_tests.exe
+      - name: 整理产物
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp build/Release/onetime.exe dist/onetime-windows-x64.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: onetime-windows-x64
+          path: dist/onetime-windows-x64.exe
+          if-no-files-found: error
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 安装构建依赖
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake xorg-dev libgl1-mesa-dev libglu1-mesa-dev
+      - name: 获取 EUI-NEO（bundled 模式，其余依赖全离线）
+        run: |
+          git clone https://github.com/sudoevolve/EUI-NEO.git 3rd/EUI-NEO
+          git -C 3rd/EUI-NEO checkout "$EUI_NEO_REF"
+      - name: 构建 + 测试（脚本内置依赖自检与全量测试）
+        run: bash scripts/build-linux.sh
+      - name: 整理产物
+        run: |
+          mkdir -p dist
+          cp build-linux/onetime dist/onetime-linux-x64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: onetime-linux-x64
+          path: dist/onetime-linux-x64
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: 创建 Release（.github/release-notes/<tag>.md 优先，缺失则自动生成）
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          notes=".github/release-notes/${TAG}.md"
+          ls -l dist/
+          if [ -f "$notes" ]; then
+            gh release create "$TAG" --title "$TAG" --latest --notes-file "$notes" dist/*
+          else
+            gh release create "$TAG" --title "$TAG" --latest --generate-notes dist/*
+          fi
