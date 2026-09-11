@@ -25,6 +25,7 @@
 #include "server.h"
 #include "settings.h"
 #include "util.h"
+#include "icon_png.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -729,6 +730,22 @@ static void onDeleteClick(const std::string& name) {
 
 // ---------------- 应用配置与入口 ----------------
 
+// 图标：单文件分发不携带 assets/，把内嵌 PNG（icon_png.h，由 scripts/make-icon.py
+// 生成）写到临时目录交给 EUI iconPath 加载；失败则静默走框架默认图标。
+// Windows 的 exe/任务栏图标另有 app.rc 内嵌（GLFW 自动认领 GLFW_ICON 资源）。
+std::string writeIconTempFile() {
+    namespace fs = std::filesystem;
+    std::error_code ec;
+    fs::path p = fs::temp_directory_path(ec);
+    if (ec) return {};
+    p /= "onetime-icon.png";
+    std::ofstream f(p, std::ios::binary | std::ios::trunc);
+    if (!f) return {};
+    f.write(reinterpret_cast<const char*>(kIconPng),
+            static_cast<std::streamsize>(kIconPngSize));
+    return f.good() ? p.string() : std::string{};
+}
+
 const DslAppConfig& dslAppConfig() {
     static const DslAppConfig config = [] {
         parseCli();
@@ -766,6 +783,8 @@ const DslAppConfig& dslAppConfig() {
                              .windowSize(1200, 1000)
                              .uiScale(g_settings.uiScale); // 125% 为默认档：文字按比例直接栅格化，更大更锐
         c.clearColorValue = t.pageBg;
+        if (const std::string icon = writeIconTempFile(); !icon.empty())
+            c.iconPath(icon);
 #ifdef _WIN32
         // 用系统中文字体（微软雅黑），避免随包携带 3.4 MB 字体资产
         if (std::filesystem::exists("C:/Windows/Fonts/msyh.ttc"))
@@ -787,8 +806,10 @@ const DslAppConfig& dslAppConfig() {
 #endif
 #ifdef _WIN32
         // 托盘：关闭拦截/菜单由框架 runner 内建；探测失败时框架自动降级为真关闭
-        // （Linux 默认不带托盘后端，构建详见 docs/linux-build.md，不启用）
-        if (g_settings.minimizeToTray) c.tray(true).trayTitle("onetime");
+        // （Linux 默认不带托盘后端，构建详见 docs/linux-build.md，不启用）。
+        // 托盘图标传 exe 自身路径：ExtractIconEx 提取 app.rc 内嵌的 GLFW_ICON。
+        if (g_settings.minimizeToTray)
+            c.tray(true).trayTitle("onetime").trayIcon(plat::exePathUtf8());
 #endif
         // Ctrl+Enter：链接页快速生成 / 金库页快速存入（设置页无动作）
         c.onKeyEvent([](const eui::KeyEvent& e) {

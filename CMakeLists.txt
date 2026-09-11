@@ -41,6 +41,10 @@ target_include_directories(onetime_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # GUI 应用（EUI-NEO 前端 + 内置服务线程）
 add_executable(onetime src/main.cpp)
+if(WIN32)
+    # exe 图标资源（app.rc 引用 assets/icon.ico；GLFW 窗口类自动加载 GLFW_ICON）
+    target_sources(onetime PRIVATE app.rc)
+endif()
 eui_neo_configure_app(onetime)
 target_link_libraries(onetime PRIVATE onetime_core)
 
