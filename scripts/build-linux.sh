@@ -26,6 +26,7 @@ pkg_installed() {  # 粗探测：头文件/库文件存在即认为可用
         libwayland-dev) ls /usr/include/wayland-client.h >/dev/null 2>&1;;
         libwayland-bin) command -v wayland-scanner >/dev/null 2>&1;;
         libxkbcommon-dev) pkg-config --exists xkbcommon 2>/dev/null;;
+        libcurl4-openssl-dev) pkg-config --exists libcurl 2>/dev/null;;
         pkg-config) command -v pkg-config >/dev/null 2>&1;;
         libglib2.0-dev) pkg-config --exists gio-2.0 2>/dev/null;;
         *) false;;
@@ -37,7 +38,7 @@ wayland_pkgs="libwayland-dev libwayland-bin libxkbcommon-dev"
 for a in "$@"; do
     case "$a" in -DGLFW_BUILD_WAYLAND*) wayland_pkgs="";; esac
 done
-for p in xorg-dev libgl1-mesa-dev libglu1-mesa-dev $wayland_pkgs; do
+for p in xorg-dev libgl1-mesa-dev libglu1-mesa-dev libcurl4-openssl-dev $wayland_pkgs; do
     pkg_installed "$p" || need_pkgs+=("$p")
 done
 if [ ${#need_pkgs[@]} -gt 0 ]; then
