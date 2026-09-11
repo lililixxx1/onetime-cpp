@@ -1,8 +1,0 @@
-/* Windows resource: application icon embedded into onetime.exe.
-   GLFW's Win32 window class auto-loads the icon resource named GLFW_ICON
-   (see 3rd/EUI-NEO/3rd/glfw/src/win32_window.c), which covers the window,
-   taskbar and Alt-tab icons; the same icon is also what the tray shows
-   (main.cpp passes the exe path to ExtractIconEx).
-   The icon path is relative to this file. Keep this file ASCII-only:
-   rc.exe does not reliably handle UTF-8 comments. */
-GLFW_ICON ICON "assets/icon.ico"

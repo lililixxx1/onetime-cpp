@@ -42,8 +42,17 @@ target_include_directories(onetime_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 # GUI 应用（EUI-NEO 前端 + 内置服务线程）
 add_executable(onetime src/main.cpp)
 if(WIN32)
-    # exe 图标资源（app.rc 引用 assets/icon.ico；GLFW 窗口类自动加载 GLFW_ICON）
-    target_sources(onetime PRIVATE app.rc)
+    # exe 图标：接管 EUI 默认的图标资源位（eui_neo_configure_app 会把全局属性
+    # EUI_NEO_APP_ICON_RESOURCE 挂到 app 目标），改指本项目 assets/icon.ico。
+    # 资源名必须是 GLFW_ICON：bundled GLFW 窗口类自动加载（窗口/任务栏/Alt-Tab，
+    # 见 3rd/EUI-NEO/3rd/glfw/src/win32_window.c），托盘 ExtractIconEx 同样取它。
+    # rc 的资源文件路径用绝对路径生成，规避 rc.exe 工作目录不确定性。
+    file(TO_NATIVE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/assets/icon.ico" ONETIME_ICON_NATIVE)
+    string(REPLACE "\\" "\\\\" ONETIME_ICON_ESCAPED "${ONETIME_ICON_NATIVE}")
+    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/onetime_app_icon.rc"
+         "GLFW_ICON ICON \"${ONETIME_ICON_ESCAPED}\"\n")
+    set_property(GLOBAL PROPERTY EUI_NEO_APP_ICON_RESOURCE
+                 "${CMAKE_CURRENT_BINARY_DIR}/onetime_app_icon.rc")
 endif()
 eui_neo_configure_app(onetime)
 target_link_libraries(onetime PRIVATE onetime_core)
