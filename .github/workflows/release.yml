@@ -41,7 +41,9 @@ jobs:
           if-no-files-found: error
 
   build-linux:
-    runs-on: ubuntu-latest
+    # 钉 22.04（GCC 11 / glibc 2.35）：这是项目声明支持的最低平台，
+    # 在最老支持版上构建的产物才能在新系统上直接运行。
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - name: 安装构建依赖
