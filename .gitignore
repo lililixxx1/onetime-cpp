@@ -1,0 +1,11 @@
+3rd/EUI-NEO/
+build/
+out/
+*.exe
+*.obj
+*.pdb
+*.ilk
+.vs/
+CMakeUserPresets.json
+.v2c/
+.video_agent/
