@@ -5,7 +5,8 @@
 ## 一键构建（Ubuntu 22.04 / Debian 12 级）
 
 ```bash
-sudo apt install build-essential cmake xorg-dev libgl1-mesa-dev libglu1-mesa-dev
+sudo apt install build-essential cmake xorg-dev libgl1-mesa-dev libglu1-mesa-dev \
+  libwayland-dev libwayland-bin
 ./scripts/build-linux.sh
 ```
 
